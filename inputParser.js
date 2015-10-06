@@ -13,7 +13,7 @@ var inputParser = {
     state: null,
     client: null,
 
-    initParser: function(){
+    initParser: function(client){
         this.util = require("util");
         this.stdin = process.openStdin();
         this.username = this.states.username;
@@ -54,3 +54,5 @@ var inputParser = {
         });
     }
 };
+
+module.exports = inputParser;
