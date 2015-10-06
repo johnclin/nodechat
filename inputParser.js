@@ -10,13 +10,13 @@ var inputParser = {
     },
     username: null,
     channel: null,
-    state: this.states.username,
+    state: null,
     client: null,
 
     initParser: function(client){
         this.util = require("util");
         this.stdin = process.openStdin();
-
+        this.username = this.states.username;
         this.client = client;
 
         console.log('Please enter your name:');
