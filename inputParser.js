@@ -26,7 +26,8 @@ var inputParser = {
     listen: function(){
         this.stdin.addListener("data", function(msg) {
             var msgString = msg.toString().trim();
-            switch(state){
+
+            switch(this.state){
                 case this.statesEnum.username:
                     this.username = msgString;
                     console.log('Now chatting as ' + msgString);
