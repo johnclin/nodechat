@@ -10,14 +10,16 @@ var inputParser = {
     client: null,
 
     initParser: function(client){
-        this.statesEnum = {
-            username: 0,
-            channel: 1,
-            inchat: 2
-        }
+        var statesEnum = {
+            USERNAME: 0,
+            CHANNEL: 1,
+            INCHAT: 2
+        };
+
+        this.statesEnum = statesEnum;
         this.util = require("util");
         this.stdin = process.openStdin();
-        this.username = this.statesEnum.username;
+        this.username = this.statesEnum.USERNAME;
         this.client = client;
         
         console.log('Please enter your name:');
@@ -28,11 +30,11 @@ var inputParser = {
             var msgString = msg.toString().trim();
 
             switch(this.state){
-                case this.statesEnum.username:
+                case this.statesEnum.USERNAME:
                     this.username = msgString;
                     console.log('Now chatting as ' + msgString);
                     break;
-                case this.statesEnum.channel:
+                case this.statesEnum.CHANNEL:
                     if(this.channel != null){
                         client.unsubscribe(this.channel);
                     }
@@ -42,7 +44,7 @@ var inputParser = {
                         console.log(message);
                     });
                     break;
-                case this.statesEnum.inchat:
+                case this.statesEnum.INCHAT:
                     //scan for commands
                     //if no commands chat
                     var publication = this.client.publish(this.channel, msg.toString().trim());
