@@ -5,8 +5,7 @@ var inputParser = inputParser || {};
 
 inputParser.statesEnum = {
     USERNAME: 0,
-    NOCHANNEL: 1,
-    INCHAT: 2
+    INCHAT: 1
 };
 
 inputParser.userInfo = {
@@ -42,7 +41,7 @@ inputParser.chatApp = {
                         if(responseObj.result == 1){
                             inputParser.userInfo.username = inputParser.userInfo.lastInput;
                             console.log('Now chatting as ' + inputParser.userInfo.lastInput);
-                            inputParser.userInfo.state = inputParser.statesEnum.NOCHANNEL;
+                            inputParser.userInfo.state = inputParser.statesEnum.INCHAT;
                             console.log('You may join into a channel by typing: /join ChannelName');
                         }else{
                             console.log('Username already in use, please enter another name:');
@@ -97,29 +96,6 @@ inputParser.chatApp = {
                     }
 
                     break;
-                case inputParser.statesEnum.NOCHANNEL:
-                    if(!isAlphaNum) {
-                        console.log('Channels must be AlphaNumeric, please try again:');
-                    }else if(inputStr.toLowerCase() == 'server'){
-                        console.log('You may not access channel /server');
-                    }else{
-
-                        if(inputParser.userInfo.channel != null){
-                            console.log('Leaving ' + inputParser.userInfo.channel);
-                            inputParser.connectionInfoclient.unsubscribe(inputParser.userInfo.channel);
-                        }
-                        inputParser.userInfo.channel = '/' + inputStr;
-                        console.log('Entering ' + inputParser.userInfo.channel);
-                        inputParser.connectionInfo.client.subscribe(inputParser.userInfo.channel, function(message){
-                            var msgObj = JSON.parse(message);
-                            if (msgObj.user != inputParser.userInfo.username) {
-                                console.log(msgObj.user + ': ' + msgObj.text);
-                            }
-                        });
-                        inputParser.userInfo.state = inputParser.statesEnum.INCHAT;
-                    }
-
-                    break;
                 case inputParser.statesEnum.INCHAT:
                     //scan for commands
                     if(inputStr.charAt(0) == '/') {
@@ -132,7 +108,7 @@ inputParser.chatApp = {
 
                         switch (command[0]){
                             case '/status':
-
+                                console.log(inputParser.userInfo);
                                 break;
                             case '/join':
                                 if(!commandIsAlphaNum) {
