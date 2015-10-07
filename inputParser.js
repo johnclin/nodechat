@@ -62,7 +62,7 @@ inputParser.chatApp = {
                                 }
                             }
                         });
-                        inputParser.connectionInfoclient.unsubscribe('/admin');
+                        inputParser.connectionInfo.client.unsubscribe('/admin');
                     }
 
                     break;
