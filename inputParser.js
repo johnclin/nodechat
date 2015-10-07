@@ -71,8 +71,9 @@ inputParser.chatApp = {
                         inputParser.userInfo.channel = '/' + msgString;
                         console.log('Entering ' + inputParser.userInfo.channel);
                         inputParser.connectionInfo.client.subscribe(inputParser.userInfo.channel, function(message){
-                            inputParser.userInfo.username;
-                            console.log(message);
+                            if (message.user != inputParser.userInfo.username) {
+                                console.log(message.user + ': ' + message.text);
+                            }
                         });
                         inputParser.userInfo.state = inputParser.statesEnum.INCHAT;
                     }else{
@@ -83,7 +84,8 @@ inputParser.chatApp = {
                 case inputParser.statesEnum.INCHAT:
                     //scan for commands
                     //if no commands chat
-                    var publication = inputParser.connectionInfo.client.publish(inputParser.userInfo.channel, msg.toString().trim());
+                    var msgObj = {text: msgString, user: inputParser.userInfo.username};
+                    var publication = inputParser.connectionInfo.client.publish(inputParser.userInfo.channel, msgObj);
 
                     publication.then(function(error) {
                         console.log('There was a problem: ' + error.message);
