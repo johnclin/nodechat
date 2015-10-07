@@ -35,10 +35,10 @@ inputParser.chatApp = {
     },
 
     listen: function(){
-        inputParser.connectionInfo.stdin.addListener("data", function(msg) {
-            var msgString = msg.toString().trim();
+        inputParser.connectionInfo.stdin.addListener("data", function(userInput) {
+            var inputStr = userInput.toString().trim();
 
-            if( /[^a-zA-Z0-9]/.test( msgString ) ) {
+            if( /[^a-zA-Z0-9]/.test( inputStr ) ) {
                 var isAlphaNum = false;
             }else{
                 var isAlphaNum = true;
@@ -49,17 +49,27 @@ inputParser.chatApp = {
                     if(!isAlphaNum) {
                         console.log('Usernames must be AlphaNumeric, please try again:');
                     }else{
-                        inputParser.userInfo.username = msgString;
-                        console.log('Now chatting as ' + msgString);
-                        inputParser.userInfo.state = inputParser.statesEnum.CHANNEL;
-                        console.log('Please select Channel:');
+                        inputParser.connectionInfo.client.subscribe('/admin', function(response){
+                            var responseObj = JSON.parse(response);
+                            if(responseObj.name == inputStr){
+                                if(responseObj.result = 1){
+                                    inputParser.userInfo.username = inputStr;
+                                    console.log('Now chatting as ' + inputStr);
+                                    inputParser.userInfo.state = inputParser.statesEnum.CHANNEL;
+                                    console.log('Please select Channel:');
+                                }else{
+                                    console.log('Username already in use, please enter another name:');
+                                }
+                            }
+                        });
+                        inputParser.connectionInfoclient.unsubscribe('/admin');
                     }
 
                     break;
                 case inputParser.statesEnum.CHANNEL:
                     if(!isAlphaNum) {
                         console.log('Channels must be AlphaNumeric, please try again:');
-                    }else if(msgString.toLowerCase() == 'admin'){
+                    }else if(inputStr.toLowerCase() == 'admin'){
                         console.log('You may not access channel /admin:');
                     }else{
 
@@ -67,7 +77,7 @@ inputParser.chatApp = {
                             console.log('Leaving ' + inputParser.userInfo.channel);
                             inputParser.connectionInfoclient.unsubscribe(inputParser.userInfo.channel);
                         }
-                        inputParser.userInfo.channel = '/' + msgString;
+                        inputParser.userInfo.channel = '/' + inputStr;
                         console.log('Entering ' + inputParser.userInfo.channel);
                         inputParser.connectionInfo.client.subscribe(inputParser.userInfo.channel, function(message){
                             var msgObj = JSON.parse(message);
@@ -83,7 +93,7 @@ inputParser.chatApp = {
                     //scan for commands
                     //if no commands chat
                     var msgObj = {}
-                        msgObj.text = msgString;
+                        msgObj.text = inputStr;
                         msgObj.user = inputParser.userInfo.username;
                     var jsonObj = JSON.stringify(msgObj);
                     var publication = inputParser.connectionInfo.client.publish(inputParser.userInfo.channel, jsonObj);
