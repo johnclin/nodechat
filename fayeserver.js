@@ -14,7 +14,9 @@ var usernames = [];
 client.subscribe('/admin', function(request){
     var requestObj = JSON.parse(request);
     var index = usernames.indexOf(requestObj.name);
-    console.log(requestObj.requestType + ' Request: ' + requestObj.name);
+    if(typeof requestObj.requestType !== 'undefined'){
+        console.log(requestObj.requestType + ' Request: ' + requestObj.name);
+    }
 
     switch(requestObj.requestType)
     {
@@ -44,7 +46,7 @@ client.subscribe('/admin', function(request){
             }
             break;
         default :
-            //do nothing
+            console.log('Someone is not supposed to be here!');
             break;
     }
 
