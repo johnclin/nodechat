@@ -36,7 +36,7 @@ inputParser.chatApp = {
         inputParser.connectionInfo.client.subscribe('/admin', function(response){
             var responseObj = JSON.parse(response);
             if(responseObj.name == inputParser.userInfo.lastInput && responseObj.responseType == 'RegNameResult'){
-                if(responseObj.result = 1){
+                if(responseObj.result == 1){
                     inputParser.userInfo.username = inputParser.userInfo.lastInput;
                     console.log('Now chatting as ' + inputParser.userInfo.lastInput);
                     inputParser.connectionInfo.client.unsubscribe('/admin');
