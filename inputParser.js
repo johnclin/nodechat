@@ -12,7 +12,8 @@ inputParser.statesEnum = {
 inputParser.userInfo = {
     username: null,
     channel: null,
-    state: null
+    state: null,
+    lastInput: null
 };
 
 inputParser.connectionInfo = {
@@ -32,31 +33,33 @@ inputParser.chatApp = {
         inputParser.userInfo.state = inputParser.statesEnum.USERNAME;
         inputParser.connectionInfo.client = client;
         console.log('Please enter your name:');
+        inputParser.connectionInfo.client.subscribe('/admin', function(response){
+            var responseObj = JSON.parse(response);
+            if(responseObj.name == inputParser.userInfo.lastInput && responseObj.responseType == 'RegNameResult'){
+                if(responseObj.result = 1){
+                    inputParser.userInfo.username = inputParser.userInfo.lastInput;
+                    console.log('Now chatting as ' + inputParser.userInfo.lastInput);
+                    inputParser.connectionInfo.client.unsubscribe('/admin');
+                    inputParser.userInfo.state = inputParser.statesEnum.CHANNEL;
+                    console.log('Please select Channel:');
+                }else{
+                    console.log('Username already in use, please enter another name:');
+                }
+            }
+        });
     },
 
     listen: function(){
         inputParser.connectionInfo.stdin.addListener("data", function(userInput) {
-            var inputStr = userInput.toString().trim();
+            inputParser.userInfo.lastInput = userInput.toString().trim();
+            var inputStr = inputParser.userInfo.lastInput;
 
             if( /[^a-zA-Z0-9]/.test( inputStr ) ) {
                 var isAlphaNum = false;
             }else{
                 var isAlphaNum = true;
             }
-            inputParser.connectionInfo.client.subscribe('/admin', function(response){
-                var responseObj = JSON.parse(response);
-                if(responseObj.name == inputStr && responseObj.responseType == 'RegNameResult'){
-                    if(responseObj.result = 1){
-                        inputParser.userInfo.username = inputStr;
-                        console.log('Now chatting as ' + inputStr);
-                        inputParser.connectionInfo.client.unsubscribe('/admin');
-                        inputParser.userInfo.state = inputParser.statesEnum.CHANNEL;
-                        console.log('Please select Channel:');
-                    }else{
-                        console.log('Username already in use, please enter another name:');
-                    }
-                }
-            });
+
 
             switch(inputParser.userInfo.state){
                 case inputParser.statesEnum.USERNAME:
