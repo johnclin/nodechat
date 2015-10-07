@@ -31,14 +31,7 @@ inputParser.chatApp = {
         inputParser.connectionInfo.stdin = process.openStdin();
         inputParser.userInfo.state = inputParser.statesEnum.USERNAME;
         inputParser.connectionInfo.client = client;
-        switch(inputParser.userInfo.state){
-            case inputParser.statesEnum.USERNAME:
-                console.log('Please enter your name:');
-                break;
-            case inputParser.statesEnum.CHANNEL:
-                console.log('Please select Channel:');
-                break;
-        }
+        console.log('Please enter your name:');
     },
 
     listen: function(){
@@ -53,17 +46,23 @@ inputParser.chatApp = {
 
             switch(inputParser.userInfo.state){
                 case inputParser.statesEnum.USERNAME:
-                    if(isAlphaNum) {
+                    if(!isAlphaNum) {
+                        console.log('Usernames must be AlphaNumeric, please try again:');
+                    }else{
                         inputParser.userInfo.username = msgString;
                         console.log('Now chatting as ' + msgString);
                         inputParser.userInfo.state = inputParser.statesEnum.CHANNEL;
-                    }else{
-                        console.log('Usernames must be AlphaNumeric, please try again:');
+                        console.log('Please select Channel:');
                     }
 
                     break;
                 case inputParser.statesEnum.CHANNEL:
-                    if(isAlphaNum) {
+                    if(!isAlphaNum) {
+                        console.log('Channels must be AlphaNumeric, please try again:');
+                    }else if(msgString.toLowerCase() == 'admin'){
+                        console.log('You may not access channel /admin:');
+                    }else{
+
                         if(inputParser.userInfo.channel != null){
                             console.log('Leaving ' + inputParser.userInfo.channel);
                             inputParser.connectionInfoclient.unsubscribe(inputParser.userInfo.channel);
@@ -77,8 +76,6 @@ inputParser.chatApp = {
                             }
                         });
                         inputParser.userInfo.state = inputParser.statesEnum.INCHAT;
-                    }else{
-                        console.log('Channels must be AlphaNumeric, please try again:');
                     }
 
                     break;
