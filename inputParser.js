@@ -44,34 +44,51 @@ inputParser.chatApp = {
     listen: function(){
         inputParser.connectionInfo.stdin.addListener("data", function(msg) {
             var msgString = msg.toString().trim();
+
+            if( /[^a-zA-Z0-9]/.test( msgString ) ) {
+                var isAlphaNum = false;
+            }else{
+                var isAlphaNum = true;
+            }
+
             switch(inputParser.userInfo.state){
                 case inputParser.statesEnum.USERNAME:
-                    inputParser.userInfo.username = msgString;
-                    console.log('Now chatting as ' + msgString);
-                    inputParser.userInfo.state = inputParser.statesEnum.CHANNEL;
+                    if(isAlphaNum) {
+                        inputParser.userInfo.username = msgString;
+                        console.log('Now chatting as ' + msgString);
+                        inputParser.userInfo.state = inputParser.statesEnum.CHANNEL;
+                    }else{
+                        console.log('Usernames must be AlphaNumeric, please try again:');
+                    }
+
                     break;
                 case inputParser.statesEnum.CHANNEL:
-                    if(inputParser.userInfo.channel != null){
-                        console.log('Leaving ' + inputParser.userInfo.channel);
-                        inputParser.connectionInfoclient.unsubscribe(inputParser.userInfo.channel);
+                    if(isAlphaNum) {
+                        if(inputParser.userInfo.channel != null){
+                            console.log('Leaving ' + inputParser.userInfo.channel);
+                            inputParser.connectionInfoclient.unsubscribe(inputParser.userInfo.channel);
+                        }
+                        inputParser.userInfo.channel = '/' + msgString;
+                        console.log('Entering ' + inputParser.userInfo.channel);
+                        inputParser.connectionInfo.client.subscribe(inputParser.userInfo.channel, function(message){
+                            inputParser.userInfo.username;
+                            console.log(message);
+                        });
+                        inputParser.userInfo.state = inputParser.statesEnum.INCHAT;
+                    }else{
+                        console.log('Channels must be AlphaNumeric, please try again:');
                     }
-                    inputParser.userInfo.channel = '/' + msgString;
-                    console.log('Entering ' + inputParser.userInfo.channel);
-                    inputParser.connectionInfo.client.subscribe(inputParser.userInfo.channel, function(message){
-                        inputParser.userInfo.username;
-                        console.log(message);
-                    });
-                    inputParser.userInfo.state = inputParser.statesEnum.INCHAT;
+
                     break;
                 case inputParser.statesEnum.INCHAT:
                     //scan for commands
                     //if no commands chat
                     var publication = inputParser.connectionInfo.client.publish(inputParser.userInfo.channel, msg.toString().trim());
-                    publication.then(function() {
-                        console.log('Message received by server!');
-                    }, function(error) {
+
+                    publication.then(function(error) {
                         console.log('There was a problem: ' + error.message);
                     });
+
                     break;
             }
         });
