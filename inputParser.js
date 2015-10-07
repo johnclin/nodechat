@@ -51,10 +51,11 @@ inputParser.chatApp = {
                     }else{
                         inputParser.connectionInfo.client.subscribe('/admin', function(response){
                             var responseObj = JSON.parse(response);
-                            if(responseObj.name == inputStr){
+                            if(responseObj.name == inputStr && responseObj.responseType == 'RegNameResult'){
                                 if(responseObj.result = 1){
                                     inputParser.userInfo.username = inputStr;
                                     console.log('Now chatting as ' + inputStr);
+                                    inputParser.connectionInfo.client.unsubscribe('/admin');
                                     inputParser.userInfo.state = inputParser.statesEnum.CHANNEL;
                                     console.log('Please select Channel:');
                                 }else{
@@ -62,7 +63,12 @@ inputParser.chatApp = {
                                 }
                             }
                         });
-                        inputParser.connectionInfo.client.unsubscribe('/admin');
+                        var usernameReq = {requestType: 'RegName', name: inputStr};
+                        var publication = inputParser.connectionInfo.client.publish('/admin', JSON.stringify(usernameReq));
+
+                        publication.then(function(error) {
+                            console.log('There was a problem: ' + error.message);
+                        });
                     }
 
                     break;

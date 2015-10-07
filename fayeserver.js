@@ -15,14 +15,14 @@ client.subscribe('/admin', function(request){
     var requestObj = JSON.parse(request);
     var index = usernames.indexOf(requestObj.name);
 
-    switch(requestObj.type)
+    switch(requestObj.requestType)
     {
         case 'RegName':
             if(index > -1){
-                var result = {type: 'RegNameResult', name: requestObj.name, result: 0};
+                var result = {responseType: 'RegNameResult', name: requestObj.name, result: 0};
                 client.publish('/admin', JSON.stringify(result));
             }else{
-                var result = {type: 'RegNameResult', name: requestObj.name, result: 1};
+                var result = {responseType: 'RegNameResult', name: requestObj.name, result: 1};
                 usernames.push(requestObj.name);
                 client.publish('/admin', JSON.stringify(result));
             }
@@ -31,10 +31,10 @@ client.subscribe('/admin', function(request){
         case 'RelName':
             if (index > -1) {
                 usernames = usernames.splice(index, 1);
-                var result = {type: 'RelNameResult', name: requestObj.name, result: 1};
+                var result = {responseType: 'RelNameResult', name: requestObj.name, result: 1};
                 client.publish('/admin', JSON.stringify(result));
             }else{
-                var result = {type: 'RelNameResult', name: requestObj.name, result: 0};
+                var result = {responseType: 'RelNameResult', name: requestObj.name, result: 0};
                 client.publish('/admin', JSON.stringify(result));
             }
             break;
