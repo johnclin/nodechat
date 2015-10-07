@@ -62,14 +62,17 @@ inputParser.chatApp = {
                                     console.log('Username already in use, please enter another name:');
                                 }
                             }
-                            break;
                         });
-                        var usernameReq = {requestType: 'RegName', name: inputStr};
-                        var publication = inputParser.connectionInfo.client.publish('/admin', JSON.stringify(usernameReq));
 
-                        publication.then(function(error) {
-                            console.log('There was a problem: ' + error.message);
-                        });
+                        if(inputParser.userInfo.state != inputParser.statesEnum.CHANNEL)
+                        {
+                            var usernameReq = {requestType: 'RegName', name: inputStr};
+                            var publication = inputParser.connectionInfo.client.publish('/admin', JSON.stringify(usernameReq));
+
+                            publication.then(function(error) {
+                                console.log('There was a problem: ' + error.message);
+                            });
+                        }
                     }
 
                     break;
