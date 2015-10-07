@@ -32,20 +32,6 @@ inputParser.chatApp = {
         inputParser.userInfo.state = inputParser.statesEnum.USERNAME;
         inputParser.connectionInfo.client = client;
         console.log('Please enter your name:');
-        inputParser.connectionInfo.client.subscribe('/admin', function(response){
-            var responseObj = JSON.parse(response);
-            if(responseObj.name == inputStr && responseObj.responseType == 'RegNameResult'){
-                if(responseObj.result = 1){
-                    inputParser.userInfo.username = inputStr;
-                    console.log('Now chatting as ' + inputStr);
-                    inputParser.connectionInfo.client.unsubscribe('/admin');
-                    inputParser.userInfo.state = inputParser.statesEnum.CHANNEL;
-                    console.log('Please select Channel:');
-                }else{
-                    console.log('Username already in use, please enter another name:');
-                }
-            }
-        });
     },
 
     listen: function(){
@@ -63,6 +49,21 @@ inputParser.chatApp = {
                     if(!isAlphaNum) {
                         console.log('Usernames must be AlphaNumeric, please try again:');
                     }else{
+                        inputParser.connectionInfo.client.subscribe('/admin', function(response){
+                            var responseObj = JSON.parse(response);
+                            if(responseObj.name == inputStr && responseObj.responseType == 'RegNameResult'){
+                                if(responseObj.result = 1){
+                                    inputParser.userInfo.username = inputStr;
+                                    console.log('Now chatting as ' + inputStr);
+                                    inputParser.connectionInfo.client.unsubscribe('/admin');
+                                    inputParser.userInfo.state = inputParser.statesEnum.CHANNEL;
+                                    console.log('Please select Channel:');
+                                }else{
+                                    console.log('Username already in use, please enter another name:');
+                                }
+                            }
+                            break;
+                        });
                         var usernameReq = {requestType: 'RegName', name: inputStr};
                         var publication = inputParser.connectionInfo.client.publish('/admin', JSON.stringify(usernameReq));
 
