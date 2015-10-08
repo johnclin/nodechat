@@ -153,6 +153,8 @@ inputParser.chatApp = {
                                 }
                                 break;
                             case '/quit':
+                                var usernameRel = {requestType: 'RelName', name: inputParser.userInfo.username};
+                                inputParser.chatApp.publish('/server', JSON.stringify(usernameRel));
                                 throw 'quit';
                                 break;
                             default :
