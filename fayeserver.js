@@ -13,12 +13,16 @@ var client = new faye.Client('http://localhost:8000/faye');
 var usernames = [];
 client.subscribe('/server', function(request){
     var requestObj = JSON.parse(request);
-    var index = usernames.indexOf(requestObj.name);
     if(typeof requestObj.requestType !== 'undefined'){
         console.log(requestObj.requestType + ' Request: ' + requestObj.name);
+        var index = usernames.indexOf(requestObj.name);
         switch(requestObj.requestType)
         {
             case 'RegName':
+
+                var result = {responseType: 'SrvNameCheck', name: requestObj.name};
+                client.publish('/server', JSON.stringify(result));
+
                 if(index > -1){
                     var result = {responseType: 'RegNameResult', name: requestObj.name, result: 0};
                     console.log(result);
@@ -50,3 +54,4 @@ client.subscribe('/server', function(request){
     }
 
 });
+
