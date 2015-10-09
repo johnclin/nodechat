@@ -16,8 +16,10 @@ inputParser.userInfo = {
 };
 
 inputParser.connectionInfo = {
-    stdin: null,
-    client: null
+    client: null,
+    rl: require('readline').createInterface(
+        process.stdin, process.stdout
+    ),
 };
 
 inputParser.chatApp = {
@@ -27,12 +29,10 @@ inputParser.chatApp = {
     client: null,
 
     initParser: function(client){
-        require("util");
-        inputParser.connectionInfo.stdin = process.openStdin();
         inputParser.userInfo.state = inputParser.statesEnum.USERNAME;
         inputParser.connectionInfo.client = client;
-        console.log('Please enter your name:');
-        inputParser.chatApp.initNameServer()
+        inputParser.chatApp.initNameServer();
+        inputParser.chatApp.initUsername();
     },
 
     initNameServer: function(){
@@ -48,9 +48,11 @@ inputParser.chatApp = {
                             inputParser.userInfo.state = inputParser.statesEnum.INCHAT;
                             if(inputParser.userInfo.channel == null){
                                 console.log('You may join into a channel by typing: /join ChannelName');
+                                inputParser.chatApp.listen();
                             }
                         }else{
                             console.log('Username already in use, please enter another name:');
+                            inputParser.chatApp.initUsername();
                         }
                     }
                     break;
@@ -85,92 +87,101 @@ inputParser.chatApp = {
         });
     },
 
+    initUsername: function() {
+        inputParser.connectionInfo.rl.setPrompt('Enter username: ');
+        inputParser.connectionInfo.rl.prompt();
+
+        inputParser.connectionInfo.rl.on('line', function(line) {
+            if(!inputParser.chatApp.testAlphaNumNoSpace(line)) {
+                console.log('Usernames must be AlphaNumeric and without spaces, please try again:');
+                inputParser.chatApp.initUsername();
+            }else{
+                inputParser.userInfo.lastInput = line;
+                var usernameReq = {requestType: 'RegName', name: line};
+                inputParser.chatApp.publish('/server', JSON.stringify(usernameReq));
+                inputParser.connectionInfo.rl.removeAllListeners();
+            }
+        });
+    },
+
     listen: function(){
-        inputParser.connectionInfo.stdin.addListener("data", function(userInput) {
+        inputParser.connectionInfo.rl.setPrompt(inputParser.userInfo.username + ": ");
+        inputParser.connectionInfo.rl.prompt();
+        inputParser.connectionInfo.rl.on('line', function(userInput) {
             inputParser.userInfo.lastInput = userInput.toString().trim();
             var inputStr = inputParser.userInfo.lastInput;
+            //scan for commands
+            if (inputStr.charAt(0) == '/') {
+                var command = inputStr.split(' ');
 
-            switch(inputParser.userInfo.state){
-                case inputParser.statesEnum.USERNAME:
-                    if(!inputParser.chatApp.testAlphaNumNoSpace(inputStr)) {
-                        console.log('Usernames must be AlphaNumeric and without spaces, please try again:');
-                    }else{
-                        var usernameReq = {requestType: 'RegName', name: inputStr};
-                        inputParser.chatApp.publish('/server', JSON.stringify(usernameReq));
-                    }
+                switch (command[0]) {
+                    case '/status':
+                        console.log("Username: " + inputParser.userInfo.username);
+                        console.log("Channel: " + inputParser.userInfo.channel);
+                        break;
+                    case '/join':
+                        if (!inputParser.chatApp.testAlphaNumNoSpace(command[1])) {
+                            console.log('Channels must be AlphaNumeric and without spaces, please try again:');
+                        } else if (command[1].toLowerCase() == 'server') {
+                            console.log('You may not access channel /server');
+                        } else if (command[1] == '') {
+                            if (inputParser.userInfo.channel == null) {
+                                console.log('You are not in a channel.');
+                                console.log('type: /join "ChannelName"');
+                            } else {
+                                console.log('You are currently in channel: ' + inputParser.userInfo.channel);
+                            }
+                        } else {
 
-                    break;
-                case inputParser.statesEnum.INCHAT:
-                    //scan for commands
-                    if(inputStr.charAt(0) == '/') {
-                        var command = inputStr.split(' ');
-
-                        switch (command[0]){
-                            case '/status':
-                                console.log("Username: " + inputParser.userInfo.username);
-                                console.log("Channel: " + inputParser.userInfo.channel);
-                                break;
-                            case '/join':
-                                if(!inputParser.chatApp.testAlphaNumNoSpace(command[1])) {
-                                    console.log('Channels must be AlphaNumeric and without spaces, please try again:');
-                                }else if(command[1].toLowerCase() == 'server'){
-                                    console.log('You may not access channel /server');
-                                }else if(command[1] == ''){
-                                    if(inputParser.userInfo.channel == null){
-                                        console.log('You are not in a channel.');
-                                        console.log('type: /join "ChannelName"');
-                                    }else{
-                                        console.log('You are currently in channel: ' + inputParser.userInfo.channel);
-                                    }
-                                }else{
-
-                                    if(inputParser.userInfo.channel != null){
-                                        console.log('Leaving ' + inputParser.userInfo.channel);
-                                        inputParser.connectionInfo.client.unsubscribe(inputParser.userInfo.channel);
-                                    }
-                                    inputParser.userInfo.channel = '/' + command[1];
-                                    console.log('Entering ' + inputParser.userInfo.channel);
-                                    inputParser.connectionInfo.client.subscribe(inputParser.userInfo.channel, function(message){
-                                        var msgObj = JSON.parse(message);
-                                        if (msgObj.name != inputParser.userInfo.username) {
-                                            console.log(msgObj.name + ': ' + msgObj.chattext);
-                                        }
-                                    });
-                                    inputParser.userInfo.state = inputParser.statesEnum.INCHAT;
+                            if (inputParser.userInfo.channel != null) {
+                                console.log('Leaving ' + inputParser.userInfo.channel);
+                                inputParser.connectionInfo.client.unsubscribe(inputParser.userInfo.channel);
+                            }
+                            inputParser.userInfo.channel = '/' + command[1];
+                            console.log('Entering ' + inputParser.userInfo.channel);
+                            inputParser.connectionInfo.client.subscribe(inputParser.userInfo.channel, function (message) {
+                                var msgObj = JSON.parse(message);
+                                if (msgObj.name != inputParser.userInfo.username) {
+                                    process.stdout.write('\x1B[s');     //save location
+                                    process.stdout.write('\x1B[2K');    //clear line
+                                    process.stdout.write('\x1B[1E');    //cursor to beginning of line
+                                    console.log(msgObj.name + ': ' + msgObj.chattext);
+                                    process.stdout.write('\x1B[6n');    //report
+                                    inputParser.connectionInfo.rl.prompt();
+                                    process.stdout.write('\x1B[u');     //restore location
                                 }
-                                break;
-                            case '/name':
-                                //check that name is good
-                                if(!inputParser.chatApp.testAlphaNumNoSpace(command[1])) {
-                                    console.log('Usernames must be AlphaNumeric and without spaces, please try again:');
-                                }else if(command[1] == '') {
-                                    console.log('Your username is: ' + inputStr.userInfo.username);
-                                }else{
-                                    inputParser.userInfo.lastInput = command[1];
-                                    //release name
-                                    var usernameRel = {requestType: 'RelName', name: inputParser.userInfo.username};
-                                    inputParser.chatApp.publish('/server', JSON.stringify(usernameRel));
-                                }
-                                break;
-                            case '/quit':
-                                var usernameRel = {requestType: 'RelName', name: inputParser.userInfo.username};
-                                inputParser.chatApp.publish('/server', JSON.stringify(usernameRel));
-                                throw 'quit';
-                                break;
-                            default :
-                                console.log(command[0] + " is not a valid command");
-                                console.log("Here is a list of valid commands: /join /name /status /quit");
+                            });
+                            inputParser.userInfo.state = inputParser.statesEnum.INCHAT;
                         }
-
-
-                    }else{
-                        //if no commands chat
-                        var msgObj = {chattext: inputStr, name: inputParser.userInfo.username};
-                        inputParser.chatApp.publish(inputParser.userInfo.channel, JSON.stringify(msgObj));
-                    }
-
-                    break;
+                        break;
+                    case '/name':
+                        //check that name is good
+                        if (!inputParser.chatApp.testAlphaNumNoSpace(command[1])) {
+                            console.log('Usernames must be AlphaNumeric and without spaces, please try again:');
+                        } else if (command[1] == '') {
+                            console.log('Your username is: ' + inputStr.userInfo.username);
+                        } else {
+                            inputParser.userInfo.lastInput = command[1];
+                            //release name
+                            var usernameRel = {requestType: 'RelName', name: inputParser.userInfo.username};
+                            inputParser.chatApp.publish('/server', JSON.stringify(usernameRel));
+                        }
+                        break;
+                    case '/quit':
+                        var usernameRel = {requestType: 'RelName', name: inputParser.userInfo.username};
+                        inputParser.chatApp.publish('/server', JSON.stringify(usernameRel));
+                        throw 'quit';
+                        break;
+                    default :
+                        console.log(command[0] + " is not a valid command");
+                        console.log("Here is a list of valid commands: /join /name /status /quit");
+                }
+            }else{
+                //if no commands chat
+                var msgObj = {chattext: inputStr, name: inputParser.userInfo.username};
+                inputParser.chatApp.publish(inputParser.userInfo.channel, JSON.stringify(msgObj));
             }
+            inputParser.connectionInfo.rl.prompt();
         });
     }
 };
