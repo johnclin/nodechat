@@ -61,6 +61,9 @@ inputParser.chatApp = {
                         if(responseObj.result == 1){
                             console.log('Username '+ inputParser.userInfo.username +' has been released');
 
+                            if(inputParser.userInfo.lastInput == '/quit'){
+                                throw 'exiting';
+                            }
                             //try to register new username
                             var usernameReq = {requestType: 'RegName', name: inputParser.userInfo.lastInput};
                             inputParser.chatApp.publish('/server', JSON.stringify(usernameReq));
@@ -82,14 +85,16 @@ inputParser.chatApp = {
 
     publish: function(server, msgStr){
         var publication = inputParser.connectionInfo.client.publish(server, msgStr);
-        publication.then(function(error) {
-            console.log('There was a problem: ' + error.message);
-        });
+        publication.then(function() {
+                return true;
+            }, function(error) {
+                console.log('There was a problem: ' + error.message);
+            });
     },
 
     initUsername: function() {
         inputParser.connectionInfo.rl.setPrompt('Enter username: ');
-        inputParser.connectionInfo.rl.prompt();
+        inputParser.connectionInfo.rl.prompt(true);
 
         inputParser.connectionInfo.rl.on('line', function(line) {
             if(!inputParser.chatApp.testAlphaNumNoSpace(line)) {
@@ -106,7 +111,7 @@ inputParser.chatApp = {
 
     listen: function(){
         inputParser.connectionInfo.rl.setPrompt(inputParser.userInfo.username + ": ");
-        inputParser.connectionInfo.rl.prompt();
+        inputParser.connectionInfo.rl.prompt(true);
         inputParser.connectionInfo.rl.on('line', function(userInput) {
             inputParser.userInfo.lastInput = userInput.toString().trim();
             var inputStr = inputParser.userInfo.lastInput;
@@ -142,13 +147,11 @@ inputParser.chatApp = {
                             inputParser.connectionInfo.client.subscribe(inputParser.userInfo.channel, function (message) {
                                 var msgObj = JSON.parse(message);
                                 if (msgObj.name != inputParser.userInfo.username) {
-                                    process.stdout.write('\x1B[s');     //save location
                                     process.stdout.write('\x1B[2K');    //clear line
                                     process.stdout.write('\x1B[1E');    //cursor to beginning of line
                                     console.log(msgObj.name + ': ' + msgObj.chattext);
                                     process.stdout.write('\x1B[6n');    //report
-                                    inputParser.connectionInfo.rl.prompt();
-                                    process.stdout.write('\x1B[u');     //restore location
+                                    inputParser.connectionInfo.rl.prompt(true);
                                 }
                             });
                             inputParser.userInfo.state = inputParser.statesEnum.INCHAT;
@@ -170,7 +173,6 @@ inputParser.chatApp = {
                     case '/quit':
                         var usernameRel = {requestType: 'RelName', name: inputParser.userInfo.username};
                         inputParser.chatApp.publish('/server', JSON.stringify(usernameRel));
-                        throw 'quit';
                         break;
                     default :
                         console.log(command[0] + " is not a valid command");
@@ -181,7 +183,7 @@ inputParser.chatApp = {
                 var msgObj = {chattext: inputStr, name: inputParser.userInfo.username};
                 inputParser.chatApp.publish(inputParser.userInfo.channel, JSON.stringify(msgObj));
             }
-            inputParser.connectionInfo.rl.prompt();
+            inputParser.connectionInfo.rl.prompt(true);
         });
     }
 };
